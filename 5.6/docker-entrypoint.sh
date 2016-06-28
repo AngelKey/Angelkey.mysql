@@ -103,6 +103,22 @@ if [ "$1" = 'mysqld' -a -z "$wantHelp" ]; then
 			echo 'FLUSH PRIVILEGES ;' | "${mysql[@]}"
 		fi
 
+		if [ "$MYSQL_DATABASES" ]; then
+			IFS=',' read -r -a dbarray <<< "$MYSQL_DATABASES"
+
+			for db in "${dbarray[@]}"
+			do
+				echo "CREATE DATABASE IF NOT EXISTS \`$db\` ;" | "${mysql[@]}"
+				if [ "$MYSQL_USER" -a "$MYSQL_PASSWORD" ]; then
+					echo "GRANT ALL ON \`$MYSQL_DATABASE\`.* TO '$MYSQL_USER'@'%' ;" | "${mysql[@]}"
+				fi
+			done
+
+			if [ "$MYSQL_USER" -a "$MYSQL_PASSWORD" ]; then
+				echo 'FLUSH PRIVILEGES ;' | "${mysql[@]}"
+			fi
+		fi
+
 		echo
 		for f in /docker-entrypoint-initdb.d/*; do
 			case "$f" in
